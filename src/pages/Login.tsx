@@ -23,19 +23,27 @@ const Login: React.FC = () => {
             });
             if (error) throw error;
 
-            // Check if user has an active subscription
             if (authData.user) {
-                const { data: userData } = await supabase
+                // First check if user is a consultor
+                const { data: consultorData } = await supabase
                     .from('usuarios')
-                    .select('consultoria_id')
+                    .select('consultoria_id, role_plataforma')
                     .eq('auth_user_id', authData.user.id)
                     .single();
 
-                if (userData) {
+                if (consultorData) {
+                    // User is consultor or superadmin
+                    if (consultorData.role_plataforma === 'superadmin') {
+                        // Future: redirect to admin console
+                        navigate('/dashboard');
+                        return;
+                    }
+
+                    // Check for active subscription
                     const { data: assinatura } = await supabase
                         .from('assinaturas')
                         .select('status')
-                        .eq('consultoria_id', userData.consultoria_id)
+                        .eq('consultoria_id', consultorData.consultoria_id)
                         .eq('status', 'ativa')
                         .single();
 
@@ -44,9 +52,28 @@ const Login: React.FC = () => {
                     } else {
                         navigate('/planos');
                     }
-                } else {
-                    navigate('/planos');
+                    return;
                 }
+
+                // Check if user is admin_empresa
+                const { data: empresaUserData } = await supabase
+                    .from('usuarios_empresa')
+                    .select('empresa_cliente_id, ativo, primeiro_login')
+                    .eq('auth_user_id', authData.user.id)
+                    .single();
+
+                if (empresaUserData) {
+                    if (!empresaUserData.ativo) {
+                        throw new Error('Sua conta está desativada. Entre em contato com seu consultor.');
+                    }
+
+                    // Admin RH goes directly to their workspace
+                    navigate(`/workspace/${empresaUserData.empresa_cliente_id}`);
+                    return;
+                }
+
+                // No user profile found - new consultant going through signup
+                navigate('/planos');
             }
         } catch (error: any) {
             setErrorMsg(error.message || 'Erro ao realizar login');

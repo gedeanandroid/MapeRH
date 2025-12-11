@@ -24,6 +24,13 @@ import OrganizationalStructure from './src/pages/workspace/OrganizationalStructu
 import Positions from './src/pages/workspace/Positions';
 import Competencies from './src/pages/workspace/Competencies';
 import Employees from './src/pages/workspace/Employees';
+import CompanyUsers from './src/pages/workspace/CompanyUsers';
+import AuditLogs from './src/pages/AuditLogs';
+import AdminLayout from './src/layouts/AdminLayout';
+import GlobalUsers from './src/pages/admin/GlobalUsers';
+import ImpersonationBanner from './src/components/ImpersonationBanner';
+import { useAuth } from './src/contexts/AuthProvider';
+import { Navigate } from 'react-router-dom';
 
 function LandingPage() {
   const location = useLocation();
@@ -55,27 +62,50 @@ function LandingPage() {
 }
 
 function App() {
+  const { userRole, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-main"></div>
+      </div>
+    );
+  }
+
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/email-confirmation" element={<EmailConfirmation />} />
-      <Route path="/complete-profile" element={<CompleteProfile />} />
-      <Route path="/planos" element={<PlanSelection />} />
-      <Route path="/checkout" element={<Checkout />} />
-      <Route path="/assinatura/sucesso" element={<SubscriptionSuccess />} />
-      <Route path="/assinatura" element={<ManageSubscription />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/workspace/:empresaId" element={<WorkspaceHome />} />
-      <Route path="/workspace/:empresaId/identidade" element={<CompanyIdentity />} />
-      <Route path="/workspace/:empresaId/estrutura" element={<OrganizationalStructure />} />
-      <Route path="/workspace/:empresaId/cargos" element={<Positions />} />
-      <Route path="/workspace/:empresaId/competencias" element={<Competencies />} />
-      <Route path="/workspace/:empresaId/colaboradores" element={<Employees />} />
-      {/* Fallback route */}
-      <Route path="*" element={<LandingPage />} />
-    </Routes>
+    <div className="relative min-h-screen">
+      <ImpersonationBanner />
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/email-confirmation" element={<EmailConfirmation />} />
+        <Route path="/complete-profile" element={<CompleteProfile />} />
+        <Route path="/planos" element={<PlanSelection />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/assinatura/sucesso" element={<SubscriptionSuccess />} />
+        <Route path="/assinatura" element={<ManageSubscription />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* Admin Routes */}
+        <Route path="/admin" element={userRole === 'superadmin' ? <AdminLayout /> : <Navigate to="/" />}>
+          <Route index element={<div className="p-4">Dashboard Admin (Em construção)</div>} />
+          <Route path="consultorias" element={<div className="p-4">Consultorias (Em construção)</div>} />
+          <Route path="usuarios" element={<GlobalUsers />} />
+        </Route>
+
+        <Route path="/workspace/:empresaId" element={<WorkspaceHome />} />
+        <Route path="/workspace/:empresaId/identidade" element={<CompanyIdentity />} />
+        <Route path="/workspace/:empresaId/estrutura" element={<OrganizationalStructure />} />
+        <Route path="/workspace/:empresaId/cargos" element={<Positions />} />
+        <Route path="/workspace/:empresaId/competencias" element={<Competencies />} />
+        <Route path="/workspace/:empresaId/colaboradores" element={<Employees />} />
+        <Route path="/workspace/:empresaId/usuarios" element={<CompanyUsers />} />
+        <Route path="/workspace/:empresaId/auditoria" element={<AuditLogs />} />
+        {/* Fallback route */}
+        <Route path="*" element={<LandingPage />} />
+      </Routes>
+    </div>
   );
 }
 

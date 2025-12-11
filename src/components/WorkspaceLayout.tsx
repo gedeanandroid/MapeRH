@@ -1,17 +1,18 @@
 import React, { ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthProvider';
 import { useWorkspace } from '../contexts/WorkspaceContext';
 import {
     Building2, Home, Users, Briefcase, Target, Award, BarChart3,
-    Settings, LogOut, ChevronDown, ArrowLeft, UserCog
+    Settings, LogOut, ChevronDown, ArrowLeft, UserCog, ShieldCheck, History
 } from 'lucide-react';
 
 interface WorkspaceLayoutProps {
     children: ReactNode;
 }
 
-const menuItems = [
+// Base menu items for all users
+const baseMenuItems = [
     { icon: Home, label: 'Visão Geral', path: '' },
     { icon: Building2, label: 'Identidade Empresarial', path: 'identidade' },
     { icon: Users, label: 'Estrutura Organizacional', path: 'estrutura' },
@@ -22,8 +23,17 @@ const menuItems = [
     { icon: BarChart3, label: 'Relatórios', path: 'relatorios', disabled: true },
 ];
 
+// Consultor-only menu item
+const consultorOnlyItems = [
+    { icon: ShieldCheck, label: 'Usuários', path: 'usuarios', disabled: false },
+];
+
+const sharedItems = [
+    { icon: History, label: 'Auditoria', path: 'auditoria', disabled: false },
+];
+
 export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
-    const { signOut } = useAuth();
+    const { signOut, userRole } = useAuth();
     const { empresaAtiva, clearWorkspace } = useWorkspace();
     const navigate = useNavigate();
 
@@ -77,7 +87,7 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
                 {/* Navigation */}
                 <nav className="flex-1 p-4 overflow-y-auto">
                     <ul className="space-y-1">
-                        {menuItems.map((item) => {
+                        {[...baseMenuItems, ...sharedItems, ...(userRole === 'consultor' || userRole === 'superadmin' ? consultorOnlyItems : [])].map((item) => {
                             const Icon = item.icon;
                             const isActive = location.pathname === `/workspace/${empresaAtiva.id}/${item.path}` ||
                                 (item.path === '' && location.pathname === `/workspace/${empresaAtiva.id}`);

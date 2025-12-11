@@ -108,7 +108,7 @@ export default function CompleteProfile() {
             // Since I haven't built dashboard, I'll redirect to / or stay here. 
             // Plan said "Redireciona de volta ao Painel Principal."
             // I'll redirect to / after a short delay.
-            setTimeout(() => navigate('/'), 2000);
+            setTimeout(() => navigate('/dashboard'), 2000);
 
         } catch (error: any) {
             console.error('Error updating profile:', error);
@@ -130,7 +130,7 @@ export default function CompleteProfile() {
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
                 <div className="flex items-center mb-6">
-                    <Link to="/" className="mr-4 text-gray-500 hover:text-gray-700">
+                    <Link to="/dashboard" className="mr-4 text-gray-500 hover:text-gray-700">
                         <ArrowLeft className="w-6 h-6" />
                     </Link>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center">

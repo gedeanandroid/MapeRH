@@ -14,16 +14,20 @@ interface Plan {
     preco_mensal_centavos: number;
 }
 
+const ANNUAL_DISCOUNT = 0.15;
+
 export default function Checkout() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const planId = searchParams.get('plano');
+    const ciclo = searchParams.get('ciclo') || 'mensal';
 
     const [plan, setPlan] = useState<Plan | null>(null);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const isAnnual = ciclo === 'anual';
 
     // Form state
     const [formData, setFormData] = useState({
@@ -63,6 +67,21 @@ export default function Checkout() {
         fetchPlan();
     }, [planId, navigate]);
 
+    const getMonthlyPrice = (basePrice: number) => {
+        if (isAnnual) {
+            return Math.round(basePrice * (1 - ANNUAL_DISCOUNT));
+        }
+        return basePrice;
+    };
+
+    const getTotalPayment = (basePrice: number) => {
+        if (isAnnual) {
+            // Annual: monthly price with discount * 12 months
+            return Math.round(basePrice * (1 - ANNUAL_DISCOUNT) * 12);
+        }
+        return basePrice;
+    };
+
     const formatPrice = (centavos: number) => {
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
@@ -82,6 +101,9 @@ export default function Checkout() {
         setProcessing(true);
         setError(null);
 
+        const monthlyPrice = getMonthlyPrice(plan.preco_mensal_centavos);
+        const totalPayment = getTotalPayment(plan.preco_mensal_centavos);
+
         try {
             // Get user's consultoria_id
             const { data: userData, error: userError } = await supabase
@@ -98,7 +120,7 @@ export default function Checkout() {
             const paymentData: PaymentData = {
                 planoId: plan.id,
                 consultoriaId,
-                valorCentavos: plan.preco_mensal_centavos,
+                valorCentavos: totalPayment,
                 pagador: {
                     nome: formData.nome,
                     email: formData.email,
@@ -122,7 +144,9 @@ export default function Checkout() {
             // Create subscription in database
             const now = new Date();
             const reembolsavelAte = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // +7 days
-            const proximaCobranca = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // +30 days
+            const proximaCobranca = isAnnual
+                ? new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000) // +1 year
+                : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // +30 days
 
             const { data: assinatura, error: assinaturaError } = await supabase
                 .from('assinaturas')
@@ -133,7 +157,7 @@ export default function Checkout() {
                     data_inicio: now.toISOString(),
                     data_proxima_cobranca: proximaCobranca.toISOString(),
                     reembolsavel_ate: reembolsavelAte.toISOString(),
-                    valor_cobranca_centavos: plan.preco_mensal_centavos,
+                    valor_cobranca_centavos: totalPayment,
                     gateway: 'mock',
                     gateway_customer_id: result.gatewayCustomerId,
                     gateway_subscription_id: result.gatewaySubscriptionId,
@@ -152,7 +176,7 @@ export default function Checkout() {
                     assinatura_id: assinatura.id,
                     consultoria_id: consultoriaId,
                     status: 'aprovado',
-                    valor_centavos: plan.preco_mensal_centavos,
+                    valor_centavos: totalPayment,
                     tipo: 'primeiro_pagamento',
                     data_pagamento: now.toISOString(),
                     gateway: 'mock',
@@ -183,6 +207,9 @@ export default function Checkout() {
     if (!plan) {
         return null;
     }
+
+    const monthlyDisplayPrice = getMonthlyPrice(plan.preco_mensal_centavos);
+    const totalDisplayPayment = getTotalPayment(plan.preco_mensal_centavos);
 
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -354,7 +381,7 @@ export default function Checkout() {
                                             Processando...
                                         </>
                                     ) : (
-                                        <>Confirmar Pagamento de {formatPrice(plan.preco_mensal_centavos)}</>
+                                        <>Confirmar Pagamento de {formatPrice(totalDisplayPayment)}</>
                                     )}
                                 </Button>
                             </form>
@@ -374,19 +401,32 @@ export default function Checkout() {
                                 <div className="pb-4 border-b">
                                     <p className="font-semibold text-neutral-gray900">{plan.nome}</p>
                                     <p className="text-sm text-neutral-gray600">{plan.descricao}</p>
+                                    <span className={`inline-block mt-2 px-2 py-1 text-xs font-medium rounded-full ${isAnnual ? 'bg-accent-green/10 text-accent-green' : 'bg-gray-100 text-gray-600'
+                                        }`}>
+                                        {isAnnual ? 'Plano Anual (-15%)' : 'Plano Mensal'}
+                                    </span>
                                 </div>
 
                                 <div className="flex justify-between">
-                                    <span className="text-neutral-gray600">Plano mensal</span>
-                                    <span className="font-semibold">{formatPrice(plan.preco_mensal_centavos)}</span>
+                                    <span className="text-neutral-gray600">Valor {isAnnual ? 'mensal' : ''}</span>
+                                    <div className="text-right">
+                                        {isAnnual && (
+                                            <span className="text-sm text-neutral-gray400 line-through mr-2">
+                                                {formatPrice(plan.preco_mensal_centavos)}
+                                            </span>
+                                        )}
+                                        <span className="font-semibold">{formatPrice(monthlyDisplayPrice)}</span>
+                                    </div>
                                 </div>
 
                                 <div className="pt-4 border-t">
                                     <div className="flex justify-between text-lg font-bold">
                                         <span>Total</span>
-                                        <span className="text-primary-main">{formatPrice(plan.preco_mensal_centavos)}</span>
+                                        <span className="text-primary-main">{formatPrice(totalDisplayPayment)}</span>
                                     </div>
-                                    <p className="text-xs text-neutral-gray500 mt-1">Cobrado mensalmente</p>
+                                    <p className="text-xs text-neutral-gray500 mt-1">
+                                        Cobrado {isAnnual ? 'anualmente' : 'mensalmente'}
+                                    </p>
                                 </div>
                             </div>
 

@@ -61,7 +61,7 @@ export default function SubscriptionSuccess() {
                 </div>
 
                 {/* CTA */}
-                <Link to="/">
+                <Link to="/dashboard">
                     <Button
                         variant="primary"
                         className="w-full !py-4 text-lg"

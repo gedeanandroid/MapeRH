@@ -17,18 +17,44 @@ const Login: React.FC = () => {
         setLoading(true);
         setErrorMsg(null);
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { data: authData, error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
             if (error) throw error;
-            navigate('/'); // Redirect to dashboard or home after login
+
+            // Check if user has an active subscription
+            if (authData.user) {
+                const { data: userData } = await supabase
+                    .from('usuarios')
+                    .select('consultoria_id')
+                    .eq('auth_user_id', authData.user.id)
+                    .single();
+
+                if (userData) {
+                    const { data: assinatura } = await supabase
+                        .from('assinaturas')
+                        .select('status')
+                        .eq('consultoria_id', userData.consultoria_id)
+                        .eq('status', 'ativa')
+                        .single();
+
+                    if (assinatura) {
+                        navigate('/dashboard');
+                    } else {
+                        navigate('/planos');
+                    }
+                } else {
+                    navigate('/planos');
+                }
+            }
         } catch (error: any) {
             setErrorMsg(error.message || 'Erro ao realizar login');
         } finally {
             setLoading(false);
         }
     };
+
 
     return (
         <div className="min-h-screen w-full flex bg-white font-sans overflow-hidden">

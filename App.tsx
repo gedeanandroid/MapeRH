@@ -17,6 +17,13 @@ import PlanSelection from './src/pages/PlanSelection';
 import Checkout from './src/pages/Checkout';
 import SubscriptionSuccess from './src/pages/SubscriptionSuccess';
 import ManageSubscription from './src/pages/ManageSubscription';
+import Dashboard from './src/pages/Dashboard';
+import WorkspaceHome from './src/pages/WorkspaceHome';
+import CompanyIdentity from './src/pages/workspace/CompanyIdentity';
+import OrganizationalStructure from './src/pages/workspace/OrganizationalStructure';
+import Positions from './src/pages/workspace/Positions';
+import Competencies from './src/pages/workspace/Competencies';
+import Employees from './src/pages/workspace/Employees';
 
 function LandingPage() {
   const location = useLocation();
@@ -59,6 +66,13 @@ function App() {
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/assinatura/sucesso" element={<SubscriptionSuccess />} />
       <Route path="/assinatura" element={<ManageSubscription />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/workspace/:empresaId" element={<WorkspaceHome />} />
+      <Route path="/workspace/:empresaId/identidade" element={<CompanyIdentity />} />
+      <Route path="/workspace/:empresaId/estrutura" element={<OrganizationalStructure />} />
+      <Route path="/workspace/:empresaId/cargos" element={<Positions />} />
+      <Route path="/workspace/:empresaId/competencias" element={<Competencies />} />
+      <Route path="/workspace/:empresaId/colaboradores" element={<Employees />} />
       {/* Fallback route */}
       <Route path="*" element={<LandingPage />} />
     </Routes>

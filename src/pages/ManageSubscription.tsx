@@ -210,7 +210,7 @@ export default function ManageSubscription() {
         <div className="min-h-screen bg-gray-50 py-12 px-4">
             <div className="max-w-4xl mx-auto">
                 <Link
-                    to="/"
+                    to="/dashboard"
                     className="inline-flex items-center text-neutral-gray600 hover:text-primary-main transition-colors text-sm font-medium mb-8"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />

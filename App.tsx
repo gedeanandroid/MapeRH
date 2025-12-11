@@ -28,7 +28,7 @@ import CompanyUsers from './src/pages/workspace/CompanyUsers';
 import AuditLogs from './src/pages/AuditLogs';
 import AdminLayout from './src/layouts/AdminLayout';
 import GlobalUsers from './src/pages/admin/GlobalUsers';
-import ImpersonationBanner from './src/components/ImpersonationBanner';
+import BannerImpersonation from './src/components/BannerImpersonation';
 import { useAuth } from './src/contexts/AuthProvider';
 import { Navigate } from 'react-router-dom';
 
@@ -74,7 +74,7 @@ function App() {
 
   return (
     <div className="relative min-h-screen">
-      <ImpersonationBanner />
+      <BannerImpersonation />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />

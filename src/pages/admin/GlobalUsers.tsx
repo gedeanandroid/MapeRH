@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthProvider';
 import { Search, Loader2, UserCog, Building2, User } from 'lucide-react';
-import Button from '../../components/ui/Button';
+import Button from '../../../components/ui/Button';
 
 interface GlobalUser {
     id: string;
@@ -51,13 +51,15 @@ export default function GlobalUsers() {
                 type: 'consultor'
             }));
 
-            const mappedCompanyUsers: GlobalUser[] = (companyUsers || []).map(u => ({
+            const mappedCompanyUsers: GlobalUser[] = (companyUsers || []).map((u: any) => ({
                 id: u.id,
                 nome: u.nome,
                 email: u.email,
                 role: u.role_empresa,
                 type: 'usuario_empresa',
-                company_name: u.empresas_clientes?.nome
+                company_name: Array.isArray(u.empresas_clientes)
+                    ? u.empresas_clientes[0]?.nome
+                    : u.empresas_clientes?.nome
             }));
 
             setUsers([...mappedConsultors, ...mappedCompanyUsers]);

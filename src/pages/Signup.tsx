@@ -313,87 +313,93 @@ export default function Signup() {
                 </div>
 
                 {/* Content Container */}
-                <div className="relative z-10 w-full max-w-lg">
-                    {/* Main Floating Card */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 40, rotate: -2 }}
-                        animate={{ opacity: 1, y: 0, rotate: 0 }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
-                        className="absolute top-0 right-0 transform translate-x-12 -translate-y-32 bg-white rounded-2xl p-6 shadow-2xl shadow-black/20 w-64 z-20"
-                    >
-                        <div className="flex items-center space-x-3 mb-4">
-                            <div className="w-10 h-10 rounded-full bg-secondary-main/10 flex items-center justify-center text-secondary-main">
-                                <Sparkles className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500 font-medium">Consultores</p>
-                                <p className="text-lg font-bold text-gray-900">+500</p>
-                            </div>
-                        </div>
-                        <div className="flex -space-x-2">
-                            {[1, 2, 3, 4, 5].map((_, i) => (
-                                <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-primary-light to-primary-main flex items-center justify-center">
-                                    <User className="w-4 h-4 text-white" />
-                                </div>
-                            ))}
-                            <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-600">
-                                +495
-                            </div>
-                        </div>
-                    </motion.div>
-
-                    {/* Secondary Floating Card */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -40, rotate: 2 }}
-                        animate={{ opacity: 1, x: 0, rotate: 0 }}
-                        transition={{ duration: 0.8, delay: 0.4 }}
-                        className="absolute bottom-32 left-0 transform -translate-x-8 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl w-72 z-10"
-                    >
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-yellow-100 text-sm">O que você ganha</p>
-                                <h4 className="text-xl font-bold text-white mt-1">14 dias grátis</h4>
-                            </div>
-                            <div className="p-2 bg-white/20 rounded-lg">
-                                <CheckCircle2 className="w-6 h-6 text-white" />
-                            </div>
-                        </div>
-                        <ul className="space-y-2 text-white/80 text-sm">
-                            <li className="flex items-center space-x-2">
-                                <Check className="w-4 h-4 text-accent-green" />
-                                <span>Sem cartão de crédito</span>
-                            </li>
-                            <li className="flex items-center space-x-2">
-                                <Check className="w-4 h-4 text-accent-green" />
-                                <span>Acesso completo</span>
-                            </li>
-                            <li className="flex items-center space-x-2">
-                                <Check className="w-4 h-4 text-accent-green" />
-                                <span>Suporte dedicado</span>
-                            </li>
-                        </ul>
-                    </motion.div>
-
+                <div className="relative z-10 w-full max-w-md px-8 flex flex-col items-center">
                     {/* Central Text */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.6 }}
-                        className="mt-32 text-center"
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="text-center mb-12"
                     >
-                        <h2 className="text-4xl font-bold text-white mb-6 leading-tight">
+                        <h2 className="text-4xl font-bold text-white mb-4 leading-tight">
                             Comece sua<br />jornada agora.
                         </h2>
                         <p className="text-yellow-100 text-lg max-w-sm mx-auto leading-relaxed">
                             Junte-se a centenas de consultores que já transformam a gestão de RH.
                         </p>
-
-                        <div className="flex justify-center mt-8 space-x-2">
-                            <div className="w-2 h-2 rounded-full bg-white/40"></div>
-                            <div className="w-2 h-2 rounded-full bg-white"></div>
-                            <div className="w-2 h-2 rounded-full bg-white/40"></div>
-                        </div>
                     </motion.div>
+
+                    {/* Cards */}
+                    <div className="grid grid-cols-1 gap-4 w-full">
+                        {/* Trial Card */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.4 }}
+                            className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-5"
+                        >
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-yellow-100 text-sm">O que você ganha</p>
+                                    <h4 className="text-xl font-bold text-white mt-1">7 dias grátis</h4>
+                                </div>
+                                <div className="p-2 bg-white/20 rounded-lg">
+                                    <CheckCircle2 className="w-6 h-6 text-white" />
+                                </div>
+                            </div>
+                            <ul className="space-y-2 text-white/80 text-sm">
+                                <li className="flex items-center space-x-2">
+                                    <Check className="w-4 h-4 text-accent-green" />
+                                    <span>Sem cartão de crédito</span>
+                                </li>
+                                <li className="flex items-center space-x-2">
+                                    <Check className="w-4 h-4 text-accent-green" />
+                                    <span>Acesso completo</span>
+                                </li>
+                                <li className="flex items-center space-x-2">
+                                    <Check className="w-4 h-4 text-accent-green" />
+                                    <span>Suporte dedicado</span>
+                                </li>
+                            </ul>
+                        </motion.div>
+
+                        {/* Consultants Card */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.5 }}
+                            className="bg-white rounded-2xl p-5"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-secondary-main/10 flex items-center justify-center text-secondary-main">
+                                        <Sparkles className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-500 font-medium">Consultores</p>
+                                        <p className="text-lg font-bold text-gray-900">+500</p>
+                                    </div>
+                                </div>
+                                <div className="flex -space-x-2">
+                                    {[1, 2, 3, 4].map((_, i) => (
+                                        <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-primary-light to-primary-main flex items-center justify-center">
+                                            <User className="w-4 h-4 text-white" />
+                                        </div>
+                                    ))}
+                                    <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-600">
+                                        +496
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+
+                    {/* Carousel Dots */}
+                    <div className="flex justify-center mt-8 space-x-2">
+                        <div className="w-2 h-2 rounded-full bg-white/40"></div>
+                        <div className="w-2 h-2 rounded-full bg-white"></div>
+                        <div className="w-2 h-2 rounded-full bg-white/40"></div>
+                    </div>
                 </div>
             </div>
         </div>

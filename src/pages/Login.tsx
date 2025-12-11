@@ -185,98 +185,89 @@ const Login: React.FC = () => {
                 <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary-dark rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
                 <div className="absolute -bottom-32 -right-32 w-[600px] h-[600px] bg-secondary-main rounded-full mix-blend-multiply filter blur-[100px] opacity-20 animate-blob animation-delay-4000"></div>
 
-                {/* Geometric Decor */}
-                <div className="absolute top-10 right-10 grid grid-cols-3 gap-2 opacity-20">
-                    {[...Array(9)].map((_, i) => (
-                        <div key={i} className="w-4 h-4 bg-white rounded-sm"></div>
-                    ))}
-                </div>
-                <div className="absolute bottom-10 left-10 opacity-20">
-                    <div className="w-24 h-24 border-4 border-white rounded-full"></div>
-                    <div className="w-12 h-12 bg-white rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
-                </div>
-
                 {/* Content Container */}
-                <div className="relative z-10 w-full max-w-lg">
-
-                    {/* Main Floating Card */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 40, rotate: -2 }}
-                        animate={{ opacity: 1, y: 0, rotate: 0 }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
-                        className="absolute top-0 right-0 transform translate-x-12 -translate-y-32 bg-white rounded-2xl p-6 shadow-2xl shadow-black/20 w-64 z-20"
-                    >
-                        <div className="flex items-center space-x-3 mb-4">
-                            <div className="w-10 h-10 rounded-full bg-accent-green/10 flex items-center justify-center text-accent-green">
-                                <TrendingUp className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500 font-medium">Crescimento</p>
-                                <p className="text-lg font-bold text-gray-900">+127%</p>
-                            </div>
-                        </div>
-                        <div className="h-24 flex items-end justify-between space-x-2">
-                            {[40, 70, 45, 90, 65, 85].map((h, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ height: 0 }}
-                                    animate={{ height: `${h}%` }}
-                                    transition={{ duration: 1, delay: 0.8 + (i * 0.1) }}
-                                    className="w-full bg-primary-light/20 rounded-t-sm relative"
-                                >
-                                    <div className="absolute bottom-0 w-full bg-accent-green rounded-t-sm" style={{ height: '100%' }}></div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </motion.div>
-
-                    {/* Secondary Floating Card */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -40, rotate: 2 }}
-                        animate={{ opacity: 1, x: 0, rotate: 0 }}
-                        transition={{ duration: 0.8, delay: 0.4 }}
-                        className="absolute bottom-32 left-0 transform -translate-x-8 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl w-72 z-10"
-                    >
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-blue-100 text-sm">Empresas Ativas</p>
-                                <h4 className="text-3xl font-bold text-white mt-1">42</h4>
-                            </div>
-                            <div className="p-2 bg-white/20 rounded-lg">
-                                <Building2 className="w-6 h-6 text-white" />
-                            </div>
-                        </div>
-                        <div className="flex -space-x-3">
-                            {[1, 2, 3, 4].map((_, i) => (
-                                <div key={i} className={`w-8 h-8 rounded-full border-2 border-primary-main bg-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-600 z-${10 - i}`}>
-                                    {i === 3 ? '+8' : ''}
-                                    {i !== 3 && <Users className="w-4 h-4 text-gray-400" />}
-                                </div>
-                            ))}
-                        </div>
-                    </motion.div>
-
+                <div className="relative z-10 w-full max-w-md px-8 flex flex-col items-center">
                     {/* Central Text */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.6 }}
-                        className="mt-32 text-center"
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="text-center mb-12"
                     >
-                        <h2 className="text-4xl font-bold text-white mb-6 leading-tight">
-                            Transforme suas ideias<br />em realidade.
+                        <h2 className="text-4xl font-bold text-white mb-4 leading-tight">
+                            Gerencie suas<br />consultorias
                         </h2>
                         <p className="text-blue-100 text-lg max-w-sm mx-auto leading-relaxed">
-                            Gestão completa e experiência consistente em todas as plataformas e dispositivos.
+                            Gestão completa de RH para todas as suas empresas clientes.
                         </p>
-
-                        <div className="flex justify-center mt-8 space-x-2">
-                            <div className="w-2 h-2 rounded-full bg-white"></div>
-                            <div className="w-2 h-2 rounded-full bg-white/40"></div>
-                            <div className="w-2 h-2 rounded-full bg-white/40"></div>
-                        </div>
                     </motion.div>
 
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-2 gap-4 w-full">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.4 }}
+                            className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-5"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white/20 rounded-lg">
+                                    <Building2 className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <p className="text-blue-100 text-xs">Empresas</p>
+                                    <p className="text-2xl font-bold text-white">42</p>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.5 }}
+                            className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-5"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white/20 rounded-lg">
+                                    <Users className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <p className="text-blue-100 text-xs">Colaboradores</p>
+                                    <p className="text-2xl font-bold text-white">1.2k</p>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.6 }}
+                            className="bg-white rounded-2xl p-5 col-span-2"
+                        >
+                            <div className="flex justify-between items-center mb-3">
+                                <p className="text-gray-600 text-sm font-medium">Crescimento mensal</p>
+                                <span className="text-accent-green text-sm font-bold">+127%</span>
+                            </div>
+                            <div className="flex items-end justify-between space-x-2 h-16">
+                                {[40, 70, 45, 90, 65, 85, 75].map((h, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ height: 0 }}
+                                        animate={{ height: `${h}%` }}
+                                        transition={{ duration: 0.8, delay: 0.8 + (i * 0.1) }}
+                                        className="flex-1 bg-accent-green rounded-t"
+                                    />
+                                ))}
+                            </div>
+                        </motion.div>
+                    </div>
+
+                    {/* Carousel Dots */}
+                    <div className="flex justify-center mt-8 space-x-2">
+                        <div className="w-2 h-2 rounded-full bg-white"></div>
+                        <div className="w-2 h-2 rounded-full bg-white/40"></div>
+                        <div className="w-2 h-2 rounded-full bg-white/40"></div>
+                    </div>
                 </div>
             </div>
         </div>

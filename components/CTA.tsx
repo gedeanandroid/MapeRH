@@ -31,7 +31,7 @@ const CTA: React.FC = () => {
           transition={{ delay: 0.2 }}
           className="flex flex-col md:flex-row justify-center items-center gap-6 md:gap-12 mb-12 text-lg text-gray-200"
         >
-          {["14 dias grátis - cancele quando quiser", "Importe seus clientes atuais em minutos", "Suporte dedicado para consultores"].map((item, i) => (
+          {["7 dias grátis - cancele quando quiser", "Importe seus clientes atuais em minutos", "Suporte dedicado para consultores"].map((item, i) => (
             <div key={i} className="flex items-center space-x-2">
               <CheckCircle2 className="w-5 h-5 text-secondary-main flex-shrink-0" />
               <span>{item}</span>

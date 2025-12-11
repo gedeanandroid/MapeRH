@@ -35,7 +35,7 @@ const Hero: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row gap-4">
             <Button variant="primary" className="group" onClick={() => navigate('/signup')}>
-              Experimente grátis por 14 dias
+              Experimente grátis por 7 dias
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button variant="secondary">

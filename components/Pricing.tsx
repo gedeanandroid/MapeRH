@@ -60,10 +60,10 @@ const Pricing: React.FC = () => {
   return (
     <section id="pricing" className="py-24 bg-neutral-gray50">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
-        
+
         {/* Header */}
         <div className="text-center mb-16">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -72,8 +72,8 @@ const Pricing: React.FC = () => {
             <span>💰</span>
             <span>Investimento que se Paga</span>
           </motion.div>
-          
-          <motion.h2 
+
+          <motion.h2
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -81,8 +81,8 @@ const Pricing: React.FC = () => {
           >
             Planos que se <span className="text-primary-main">adaptam</span> ao seu negócio
           </motion.h2>
-          
-          <motion.p 
+
+          <motion.p
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -95,25 +95,25 @@ const Pricing: React.FC = () => {
           {/* Billing Toggle */}
           <div className="flex items-center justify-center space-x-4">
             <div className="bg-white p-1 rounded-lg border border-gray-200 inline-flex relative shadow-sm">
-              <button 
+              <button
                 onClick={() => setBillingCycle('monthly')}
                 className={`px-6 py-2 rounded-md text-sm font-medium transition-all relative z-10 ${billingCycle === 'monthly' ? 'text-white' : 'text-gray-500 hover:text-gray-900'}`}
               >
                 Mensal
               </button>
-              <button 
+              <button
                 onClick={() => setBillingCycle('yearly')}
                 className={`px-6 py-2 rounded-md text-sm font-medium transition-all relative z-10 ${billingCycle === 'yearly' ? 'text-white' : 'text-gray-500 hover:text-gray-900'}`}
               >
                 Anual
               </button>
-              
+
               {/* Sliding Background */}
-              <motion.div 
+              <motion.div
                 className="absolute top-1 bottom-1 bg-primary-main rounded-md shadow-sm"
                 initial={false}
-                animate={{ 
-                  left: billingCycle === 'monthly' ? '4px' : '50%', 
+                animate={{
+                  left: billingCycle === 'monthly' ? '4px' : '50%',
                   width: billingCycle === 'monthly' ? 'calc(50% - 6px)' : 'calc(50% - 6px)',
                   x: billingCycle === 'monthly' ? 0 : 2
                 }}
@@ -121,7 +121,7 @@ const Pricing: React.FC = () => {
               />
             </div>
             {billingCycle === 'yearly' && (
-              <motion.span 
+              <motion.span
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="text-xs font-bold text-accent-green bg-accent-green/10 px-2 py-1 rounded-md"
@@ -133,7 +133,7 @@ const Pricing: React.FC = () => {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 items-stretch">
           {plans.map((plan, index) => (
             <motion.div
               key={index}
@@ -181,7 +181,7 @@ const Pricing: React.FC = () => {
         </div>
 
         {/* Enterprise Banner */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}

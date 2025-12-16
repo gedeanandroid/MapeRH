@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 
@@ -10,7 +10,7 @@ interface UserProfile {
     email: string;
     role: UserRole;
     consultoriaId: string | null;
-    empresaClienteId: string | null; // Only for admin_empresa
+    empresaClienteId: string | null;
 }
 
 interface AuthContextType {
@@ -47,53 +47,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [loading, setLoading] = useState(true);
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [userRole, setUserRole] = useState<UserRole>(null);
-
     const [isImpersonating, setIsImpersonating] = useState(false);
 
-    // Auto-logout timer
+    const initializationDone = useRef(false);
+
+    // Auto-logout timer (5 minutes inactivity)
     useEffect(() => {
         if (!user) return;
 
         const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
-        let timeoutId: NodeJS.Timeout;
+        let timeoutId: ReturnType<typeof setTimeout>;
 
         const handleActivity = () => {
-            if (timeoutId) clearTimeout(timeoutId);
+            clearTimeout(timeoutId);
             timeoutId = setTimeout(() => {
                 console.log('User inactive for 5 minutes. Signing out...');
                 signOut();
             }, TIMEOUT_MS);
         };
 
-        // Events to track activity
         const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
         events.forEach(event => document.addEventListener(event, handleActivity));
-
-        // Initial timer start
         handleActivity();
 
         return () => {
             events.forEach(event => document.removeEventListener(event, handleActivity));
-            if (timeoutId) clearTimeout(timeoutId);
+            clearTimeout(timeoutId);
         };
     }, [user]);
 
+    // Check impersonation state
     useEffect(() => {
-        // Check if we are in impersonation mode on load
         const adminBackup = sessionStorage.getItem('admin_backup_session');
         if (adminBackup) {
             setIsImpersonating(true);
         }
-    }, [session]);
+    }, []);
 
-    const fetchUserProfile = async (authUserId: string) => {
+    const fetchUserProfile = useCallback(async (authUserId: string): Promise<boolean> => {
         try {
-            // First check if user is a consultor/superadmin
-            const { data: consultorData, error: consultorError } = await supabase
+            // Check consultor/superadmin
+            const { data: consultorData } = await supabase
                 .from('usuarios')
                 .select('id, nome, email, role, role_plataforma, consultoria_id')
                 .eq('auth_user_id', authUserId)
-                .maybeSingle(); // Use maybeSingle to avoid throwing on not found
+                .maybeSingle();
 
             if (consultorData) {
                 const role: UserRole = consultorData.role_plataforma === 'superadmin'
@@ -109,10 +107,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     consultoriaId: consultorData.consultoria_id,
                     empresaClienteId: null
                 });
-                return;
+                return true;
             }
 
-            // Check if user is admin_empresa
+            // Check admin_empresa
             const { data: empresaData } = await supabase
                 .from('usuarios_empresa')
                 .select('id, nome, email, role_empresa, consultoria_id, empresa_cliente_id')
@@ -130,104 +128,95 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     consultoriaId: empresaData.consultoria_id,
                     empresaClienteId: empresaData.empresa_cliente_id
                 });
-                return;
+                return true;
             }
 
             // No profile found
-            console.warn('User authenticated but no profile found in usuarios or usuarios_empresa');
+            console.warn('User authenticated but no profile found');
             setUserRole(null);
             setUserProfile(null);
+            return false;
         } catch (error) {
             console.error('Error fetching user profile:', error);
             setUserRole(null);
             setUserProfile(null);
+            return false;
         }
-    };
+    }, []);
 
-    const refreshProfile = async () => {
+    const refreshProfile = useCallback(async () => {
         if (user) {
             await fetchUserProfile(user.id);
         }
-    };
+    }, [user, fetchUserProfile]);
 
-    const initializeAuth = async () => {
-        try {
-            // 1. Get Session
-            const { data: { session: initialSession } } = await supabase.auth.getSession();
+    const signOut = useCallback(async () => {
+        sessionStorage.removeItem('admin_backup_session');
+        setIsImpersonating(false);
+        setUserProfile(null);
+        setUserRole(null);
+        setUser(null);
+        setSession(null);
+        await supabase.auth.signOut();
+    }, []);
 
-            setSession(initialSession);
-            setUser(initialSession?.user ?? null);
-
-            if (initialSession?.user) {
-                await fetchUserProfile(initialSession.user.id);
-            }
-        } catch (error) {
-            console.error("Auth initialization error:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    // Main auth initialization
     useEffect(() => {
-        // Initial load
-        initializeAuth();
+        // Prevent double initialization in StrictMode
+        if (initializationDone.current) return;
+        initializationDone.current = true;
 
-        // Subscription for changes
+        const initAuth = async () => {
+            try {
+                const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+
+                if (error) {
+                    console.error('Error getting session:', error);
+                    setLoading(false);
+                    return;
+                }
+
+                if (currentSession?.user) {
+                    setSession(currentSession);
+                    setUser(currentSession.user);
+                    await fetchUserProfile(currentSession.user.id);
+                }
+            } catch (error) {
+                console.error('Auth init error:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initAuth();
+
+        // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-            // console.log('Auth state change:', event);
-
-            // Should not trigger full reload on INITIAL_SESSION as we handle it manually above
-            // but helpful to keep sync
+            console.log('Auth event:', event);
 
             if (event === 'SIGNED_OUT') {
                 setSession(null);
                 setUser(null);
                 setUserProfile(null);
                 setUserRole(null);
-                setLoading(false);
-            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            } else if (event === 'SIGNED_IN' && newSession?.user) {
                 setSession(newSession);
-                setUser(newSession?.user ?? null);
-                if (newSession?.user) {
-                    await fetchUserProfile(newSession.user.id);
-                }
-                setLoading(false);
+                setUser(newSession.user);
+                await fetchUserProfile(newSession.user.id);
+            } else if (event === 'TOKEN_REFRESHED' && newSession) {
+                setSession(newSession);
             }
         });
 
-        // Safety timeout: if loading takes too long (e.g. 5s), force it to stop
-        // This prevents infinite loading screens if something hangs
-        const safetyTimeout = setTimeout(() => {
-            setLoading((prev) => {
-                if (prev) {
-                    console.warn("Auth loading timed out, forcing render.");
-                    return false;
-                }
-                return prev;
-            });
-        }, 5000);
-
         return () => {
             subscription.unsubscribe();
-            clearTimeout(safetyTimeout);
         };
-    }, []);
+    }, [fetchUserProfile]);
 
-    const signOut = async () => {
-        // Clear impersonation state if exists
-        sessionStorage.removeItem('admin_backup_session');
-        setIsImpersonating(false);
-
-        setUserProfile(null);
-        setUserRole(null);
-        await supabase.auth.signOut();
-    };
-
-    const impersonateUser = async (targetUserId: string, justification?: string) => {
+    const impersonateUser = useCallback(async (targetUserId: string, justification?: string) => {
         if (!session) return;
 
         try {
-            // 1. Get Magic Link from Edge Function
             const { data: linkData, error } = await supabase.functions.invoke('impersonate-user', {
                 body: { target_user_id: targetUserId, justificativa: justification }
             });
@@ -235,36 +224,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (error) throw new Error(error.message || 'Error calling impersonation function');
             if (linkData.error) throw new Error(linkData.error);
 
-            // 2. Store current admin session
             sessionStorage.setItem('admin_backup_session', JSON.stringify(session));
-
-            // 3. Sign out admin
             await supabase.auth.signOut();
 
-            // 4. Redirect to magic link (which logs in as target)
             if (linkData.action_link) {
                 window.location.href = linkData.action_link;
             } else {
                 throw new Error('Link generation failed');
             }
-
         } catch (error: any) {
             console.error('Impersonation error:', error);
             throw new Error(error.message || 'Falha ao iniciar impersonation');
         }
-    };
+    }, [session]);
 
-    const stopImpersonation = async () => {
+    const stopImpersonation = useCallback(async () => {
         const backupSessionStr = sessionStorage.getItem('admin_backup_session');
         if (!backupSessionStr) return;
 
         try {
             const backupSession = JSON.parse(backupSessionStr);
-
-            // 1. Sign out of target user
             await supabase.auth.signOut();
 
-            // 2. Restore admin session
             const { error } = await supabase.auth.setSession({
                 access_token: backupSession.access_token,
                 refresh_token: backupSession.refresh_token
@@ -272,19 +253,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (error) throw error;
 
-            // 3. Clear backup
             sessionStorage.removeItem('admin_backup_session');
             setIsImpersonating(false);
-
-            // 4. Force reload or re-fetch profile to ensure admin state
-            window.location.href = '/admin'; // Redirect back to admin console
-
+            window.location.href = '/admin';
         } catch (error) {
             console.error('Stop impersonation error:', error);
-            // If restoration fails, force full logout
             signOut();
         }
-    };
+    }, [signOut]);
 
     const value = {
         session,

@@ -50,6 +50,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const [isImpersonating, setIsImpersonating] = useState(false);
 
+    // Auto-logout timer
+    useEffect(() => {
+        if (!user) return;
+
+        const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+        let timeoutId: NodeJS.Timeout;
+
+        const handleActivity = () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                console.log('User inactive for 5 minutes. Signing out...');
+                signOut();
+            }, TIMEOUT_MS);
+        };
+
+        // Events to track activity
+        const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+        events.forEach(event => document.addEventListener(event, handleActivity));
+
+        // Initial timer start
+        handleActivity();
+
+        return () => {
+            events.forEach(event => document.removeEventListener(event, handleActivity));
+            if (timeoutId) clearTimeout(timeoutId);
+        };
+    }, [user]);
+
     useEffect(() => {
         // Check if we are in impersonation mode on load
         const adminBackup = sessionStorage.getItem('admin_backup_session');
@@ -61,11 +89,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchUserProfile = async (authUserId: string) => {
         try {
             // First check if user is a consultor/superadmin
-            const { data: consultorData } = await supabase
+            const { data: consultorData, error: consultorError } = await supabase
                 .from('usuarios')
                 .select('id, nome, email, role, role_plataforma, consultoria_id')
                 .eq('auth_user_id', authUserId)
-                .single();
+                .maybeSingle(); // Use maybeSingle to avoid throwing on not found
 
             if (consultorData) {
                 const role: UserRole = consultorData.role_plataforma === 'superadmin'
@@ -90,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .select('id, nome, email, role_empresa, consultoria_id, empresa_cliente_id')
                 .eq('auth_user_id', authUserId)
                 .eq('ativo', true)
-                .single();
+                .maybeSingle();
 
             if (empresaData) {
                 setUserRole('admin_empresa');
@@ -106,6 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             // No profile found
+            console.warn('User authenticated but no profile found in usuarios or usuarios_empresa');
             setUserRole(null);
             setUserProfile(null);
         } catch (error) {
@@ -121,35 +150,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    useEffect(() => {
-        // Check active sessions and sets the user
-        supabase.auth.getSession().then(async ({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
+    const initializeAuth = async () => {
+        try {
+            // 1. Get Session
+            const { data: { session: initialSession } } = await supabase.auth.getSession();
 
-            if (session?.user) {
-                await fetchUserProfile(session.user.id);
+            setSession(initialSession);
+            setUser(initialSession?.user ?? null);
+
+            if (initialSession?.user) {
+                await fetchUserProfile(initialSession.user.id);
             }
-
+        } catch (error) {
+            console.error("Auth initialization error:", error);
+        } finally {
             setLoading(false);
-        });
+        }
+    };
 
-        // Listen for changes on auth state (logged in, signed out, etc.)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
+    useEffect(() => {
+        // Initial load
+        initializeAuth();
 
-            if (session?.user) {
-                await fetchUserProfile(session.user.id);
-            } else {
+        // Subscription for changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+            // console.log('Auth state change:', event);
+
+            // Should not trigger full reload on INITIAL_SESSION as we handle it manually above
+            // but helpful to keep sync
+
+            if (event === 'SIGNED_OUT') {
+                setSession(null);
+                setUser(null);
                 setUserProfile(null);
                 setUserRole(null);
+                setLoading(false);
+            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                setSession(newSession);
+                setUser(newSession?.user ?? null);
+                if (newSession?.user) {
+                    await fetchUserProfile(newSession.user.id);
+                }
+                setLoading(false);
             }
-
-            setLoading(false);
         });
 
-        return () => subscription.unsubscribe();
+        // Safety timeout: if loading takes too long (e.g. 5s), force it to stop
+        // This prevents infinite loading screens if something hangs
+        const safetyTimeout = setTimeout(() => {
+            setLoading((prev) => {
+                if (prev) {
+                    console.warn("Auth loading timed out, forcing render.");
+                    return false;
+                }
+                return prev;
+            });
+        }, 5000);
+
+        return () => {
+            subscription.unsubscribe();
+            clearTimeout(safetyTimeout);
+        };
     }, []);
 
     const signOut = async () => {
@@ -181,9 +242,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await supabase.auth.signOut();
 
             // 4. Redirect to magic link (which logs in as target)
-            // The link is likely: https://project.supabase.co/auth/v1/verify?token=...&type=magiclink&redirect_to=...
-            // or the action_link returned by generateLink.
-
             if (linkData.action_link) {
                 window.location.href = linkData.action_link;
             } else {

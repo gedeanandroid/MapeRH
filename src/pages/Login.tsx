@@ -2,8 +2,19 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, Check, ArrowLeft, Building2, Users, TrendingUp, User, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { z } from 'zod';
 import Button from '../../components/ui/Button';
 import { supabase } from '../lib/supabaseClient';
+
+// Validation schema
+const loginSchema = z.object({
+    email: z.string()
+        .min(1, 'Email é obrigatório')
+        .email('Formato de email inválido'),
+    password: z.string()
+        .min(6, 'Senha deve ter no mínimo 6 caracteres')
+        .max(72, 'Senha deve ter no máximo 72 caracteres'),
+});
 
 const Login: React.FC = () => {
     const navigate = useNavigate();
@@ -12,16 +23,51 @@ const Login: React.FC = () => {
     const [password, setPassword] = useState('');
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+    // Rate limiting state
+    const [attempts, setAttempts] = useState(0);
+    const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+
+    // User-friendly error messages (security: don't reveal if user exists)
+    const getUserFriendlyError = (message: string): string => {
+        const errorMap: Record<string, string> = {
+            'Invalid login credentials': 'Email ou senha incorretos',
+            'Email not confirmed': 'Confirme seu email antes de fazer login',
+            'User not found': 'Email ou senha incorretos',
+            'Invalid email or password': 'Email ou senha incorretos',
+        };
+        return errorMap[message] || 'Erro ao realizar login. Tente novamente.';
+    };
+
     const onLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Check if locked out
+        if (lockedUntil && Date.now() < lockedUntil) {
+            const remainingSeconds = Math.ceil((lockedUntil - Date.now()) / 1000);
+            setErrorMsg(`Muitas tentativas falhas. Tente novamente em ${remainingSeconds} segundos.`);
+            return;
+        }
+
+        // Validate input with Zod
+        const validation = loginSchema.safeParse({ email, password });
+        if (!validation.success) {
+            const firstError = validation.error.issues[0];
+            setErrorMsg(firstError?.message || 'Dados inválidos');
+            return;
+        }
+
         setLoading(true);
         setErrorMsg(null);
         try {
             const { data: authData, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
+                email: validation.data.email,
+                password: validation.data.password,
             });
             if (error) throw error;
+
+            // Login successful - reset attempts
+            setAttempts(0);
+            setLockedUntil(null);
 
             if (authData.user) {
                 // First check if user is a consultor
@@ -76,7 +122,18 @@ const Login: React.FC = () => {
                 navigate('/planos');
             }
         } catch (error: any) {
-            setErrorMsg(error.message || 'Erro ao realizar login');
+            // Increment failed attempts
+            const newAttempts = attempts + 1;
+            setAttempts(newAttempts);
+
+            // Lock out after 5 failed attempts
+            if (newAttempts >= 5) {
+                setLockedUntil(Date.now() + 60000); // 60 seconds lockout
+                setAttempts(0);
+                setErrorMsg('Muitas tentativas falhas. Aguarde 60 segundos para tentar novamente.');
+            } else {
+                setErrorMsg(getUserFriendlyError(error.message));
+            }
         } finally {
             setLoading(false);
         }

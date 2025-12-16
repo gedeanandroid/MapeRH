@@ -40,25 +40,21 @@ export const auditService = {
         action: 'INSERT' | 'UPDATE' | 'DELETE',
         tabela: string,
         registroId: string,
-        user: AuditUser,
+        _user: AuditUser, // No longer used - fetched server-side
         context: AuditContext,
         dadosAnteriores?: any,
         dadosNovos?: any,
         camposAlterados?: string[]
     ) {
-        const { error } = await supabase.from('audit_log').insert({
-            acao: action,
-            tabela,
-            registro_id: registroId,
-            user_id: user.id,
-            user_type: user.type,
-            user_name: user.name,
-            user_email: user.email,
-            consultoria_id: context.consultoriaId,
-            empresa_cliente_id: context.empresaClienteId,
-            dados_anteriores: dadosAnteriores,
-            dados_novos: dadosNovos,
-            campos_alterados: camposAlterados
+        // Use secure RPC function instead of direct INSERT
+        const { error } = await supabase.rpc('insert_audit_log', {
+            p_tabela: tabela,
+            p_registro_id: registroId,
+            p_acao: action,
+            p_empresa_cliente_id: context.empresaClienteId || null,
+            p_dados_anteriores: dadosAnteriores || null,
+            p_dados_novos: dadosNovos || null,
+            p_campos_alterados: camposAlterados || null
         });
 
         if (error) console.error('Error logging audit:', error);

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
@@ -29,6 +28,7 @@ import AuditLogs from './src/pages/AuditLogs';
 import AdminLayout from './src/layouts/AdminLayout';
 import GlobalUsers from './src/pages/admin/GlobalUsers';
 import BannerImpersonation from './src/components/BannerImpersonation';
+import LoadingScreen from './src/components/LoadingScreen';
 import { useAuth } from './src/contexts/AuthProvider';
 import { Navigate } from 'react-router-dom';
 
@@ -65,11 +65,7 @@ function App() {
   const { userRole, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-main"></div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (

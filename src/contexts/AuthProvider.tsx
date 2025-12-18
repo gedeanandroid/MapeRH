@@ -41,14 +41,6 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-// Helper: Promise with timeout
-const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<T> => {
-    const timeout = new Promise<T>((resolve) => {
-        setTimeout(() => resolve(fallback), ms);
-    });
-    return Promise.race([promise, timeout]);
-};
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
@@ -107,13 +99,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchUserProfile = useCallback(async (authUserId: string): Promise<boolean> => {
         try {
             // Check consultor/superadmin with 5s timeout
-            const consultorPromise = supabase
-                .from('usuarios')
-                .select('id, nome, email, role, role_plataforma, consultoria_id')
-                .eq('auth_user_id', authUserId)
-                .maybeSingle();
+            const consultorResult = await Promise.race([
+                supabase
+                    .from('usuarios')
+                    .select('id, nome, email, role, role_plataforma, consultoria_id')
+                    .eq('auth_user_id', authUserId)
+                    .maybeSingle(),
+                new Promise<{ data: null; error: null }>((resolve) =>
+                    setTimeout(() => resolve({ data: null, error: null }), 5000)
+                )
+            ]);
 
-            const { data: consultorData } = await withTimeout(consultorPromise, 5000, { data: null, error: null });
+            const consultorData = consultorResult.data;
 
             if (consultorData) {
                 const role: UserRole = consultorData.role_plataforma === 'superadmin'
@@ -133,14 +130,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             // Check admin_empresa with 5s timeout
-            const empresaPromise = supabase
-                .from('usuarios_empresa')
-                .select('id, nome, email, role_empresa, consultoria_id, empresa_cliente_id')
-                .eq('auth_user_id', authUserId)
-                .eq('ativo', true)
-                .maybeSingle();
+            const empresaResult = await Promise.race([
+                supabase
+                    .from('usuarios_empresa')
+                    .select('id, nome, email, role_empresa, consultoria_id, empresa_cliente_id')
+                    .eq('auth_user_id', authUserId)
+                    .eq('ativo', true)
+                    .maybeSingle(),
+                new Promise<{ data: null; error: null }>((resolve) =>
+                    setTimeout(() => resolve({ data: null, error: null }), 5000)
+                )
+            ]);
 
-            const { data: empresaData } = await withTimeout(empresaPromise, 5000, { data: null, error: null });
+            const empresaData = empresaResult.data;
 
             if (empresaData) {
                 setUserRole('admin_empresa');
@@ -193,12 +195,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const initAuth = async () => {
             try {
                 // Get session with 5s timeout
-                const sessionPromise = supabase.auth.getSession();
-                const { data, error } = await withTimeout(
-                    sessionPromise,
-                    5000,
-                    { data: { session: null }, error: new Error('Session timeout') }
-                );
+                const sessionResult = await Promise.race([
+                    supabase.auth.getSession(),
+                    new Promise<{ data: { session: null }; error: null }>((resolve) =>
+                        setTimeout(() => resolve({ data: { session: null }, error: null }), 5000)
+                    )
+                ]);
+
+                const { data, error } = sessionResult;
 
                 if (error) {
                     console.error('Error getting session:', error);

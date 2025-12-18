@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 
@@ -48,8 +48,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [userRole, setUserRole] = useState<UserRole>(null);
     const [isImpersonating, setIsImpersonating] = useState(false);
-
-    const initializationDone = useRef(false);
 
     // GUARANTEED timeout - loading MUST end after 8 seconds no matter what
     useEffect(() => {
@@ -188,19 +186,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Main auth initialization
     useEffect(() => {
-        // Prevent double initialization in StrictMode
-        if (initializationDone.current) return;
-        initializationDone.current = true;
+        let isMounted = true;
 
         const initAuth = async () => {
             try {
+                console.log('AuthProvider: Starting session initialization...');
+
                 // Get session with 5s timeout
                 const sessionResult = await Promise.race([
                     supabase.auth.getSession(),
                     new Promise<{ data: { session: null }; error: null }>((resolve) =>
-                        setTimeout(() => resolve({ data: { session: null }, error: null }), 5000)
+                        setTimeout(() => {
+                            console.log('AuthProvider: Session timeout, returning null');
+                            resolve({ data: { session: null }, error: null });
+                        }, 5000)
                     )
                 ]);
+
+                if (!isMounted) return;
 
                 const { data, error } = sessionResult;
 
@@ -211,6 +214,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
 
                 const currentSession = data.session;
+                console.log('AuthProvider: Session result:', currentSession ? 'Found session' : 'No session');
+
                 if (currentSession?.user) {
                     setSession(currentSession);
                     setUser(currentSession.user);
@@ -219,7 +224,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch (error) {
                 console.error('Auth init error:', error);
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
@@ -227,7 +234,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-            console.log('Auth event:', event);
+            console.log('Auth event:', event, 'Session:', newSession ? 'exists' : 'null');
+
+            if (!isMounted) return;
 
             if (event === 'SIGNED_OUT') {
                 setSession(null);
@@ -240,12 +249,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setUser(newSession.user);
                 await fetchUserProfile(newSession.user.id);
                 setLoading(false);
+            } else if (event === 'INITIAL_SESSION' && newSession?.user) {
+                // Handle session recovery on page refresh
+                console.log('AuthProvider: INITIAL_SESSION - recovering session');
+                setSession(newSession);
+                setUser(newSession.user);
+                await fetchUserProfile(newSession.user.id);
+                setLoading(false);
             } else if (event === 'TOKEN_REFRESHED' && newSession) {
                 setSession(newSession);
             }
         });
 
         return () => {
+            isMounted = false;
             subscription.unsubscribe();
         };
     }, [fetchUserProfile]);

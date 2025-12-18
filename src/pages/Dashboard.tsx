@@ -30,7 +30,7 @@ interface Assinatura {
 }
 
 export default function Dashboard() {
-    const { user, signOut } = useAuth();
+    const { user, signOut, userRole } = useAuth();
     const { setEmpresaAtiva } = useWorkspace();
     const navigate = useNavigate();
 
@@ -44,11 +44,18 @@ export default function Dashboard() {
     const [consultoriaId, setConsultoriaId] = useState<string | null>(null);
     const [primeiroLoginConcluido, setPrimeiroLoginConcluido] = useState(true);
 
+    // Redirect superadmin to admin console
     useEffect(() => {
-        if (user) {
+        if (userRole === 'superadmin') {
+            navigate('/admin', { replace: true });
+        }
+    }, [userRole, navigate]);
+
+    useEffect(() => {
+        if (user && userRole !== 'superadmin') {
             fetchData();
         }
-    }, [user]);
+    }, [user, userRole]);
 
     const fetchData = async () => {
         if (!user) return;

@@ -6,11 +6,12 @@ import { useAuth } from '../contexts/AuthProvider';
 import { useWorkspace, EmpresaCliente } from '../contexts/WorkspaceContext';
 import {
     Building2, Plus, Search, LogOut, Settings, CreditCard,
-    Loader2, MoreVertical, Edit2, Archive, ArrowRight, Users, Briefcase,
+    MoreVertical, Edit2, Archive, ArrowRight, Users, Briefcase,
     AlertCircle, Zap, UserCheck
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import CompanyFormModal from '../components/CompanyFormModal';
+import LoadingScreen from '../components/LoadingScreen';
 
 interface Consultoria {
     id: string;
@@ -163,12 +164,7 @@ export default function Dashboard() {
     }, [loading, hasActiveSubscription, navigate]);
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-
-                <Loader2 className="animate-spin h-8 w-8 text-primary-main" />
-            </div>
-        );
+        return <LoadingScreen />;
     }
 
     return (

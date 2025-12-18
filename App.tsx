@@ -27,6 +27,11 @@ import CompanyUsers from './src/pages/workspace/CompanyUsers';
 import AuditLogs from './src/pages/AuditLogs';
 import AdminLayout from './src/layouts/AdminLayout';
 import GlobalUsers from './src/pages/admin/GlobalUsers';
+import AdminDashboard from './src/pages/admin/AdminDashboard';
+import Consultorias from './src/pages/admin/Consultorias';
+import PainelFinanceiro from './src/pages/admin/PainelFinanceiro';
+import AuditoriaSistema from './src/pages/admin/AuditoriaSistema';
+import Configuracoes from './src/pages/admin/Configuracoes';
 import BannerImpersonation from './src/components/BannerImpersonation';
 import LoadingScreen from './src/components/LoadingScreen';
 import { useAuth } from './src/contexts/AuthProvider';
@@ -85,9 +90,12 @@ function App() {
 
         {/* Admin Routes */}
         <Route path="/admin" element={userRole === 'superadmin' ? <AdminLayout /> : <Navigate to="/" />}>
-          <Route index element={<div className="p-4">Dashboard Admin (Em construção)</div>} />
-          <Route path="consultorias" element={<div className="p-4">Consultorias (Em construção)</div>} />
+          <Route index element={<AdminDashboard />} />
+          <Route path="consultorias" element={<Consultorias />} />
           <Route path="usuarios" element={<GlobalUsers />} />
+          <Route path="financeiro" element={<PainelFinanceiro />} />
+          <Route path="auditoria" element={<AuditoriaSistema />} />
+          <Route path="configuracoes" element={<Configuracoes />} />
         </Route>
 
         <Route path="/workspace/:empresaId" element={<WorkspaceHome />} />

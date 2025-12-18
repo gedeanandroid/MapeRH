@@ -41,6 +41,14 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+// Helper: Promise with timeout
+const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<T> => {
+    const timeout = new Promise<T>((resolve) => {
+        setTimeout(() => resolve(fallback), ms);
+    });
+    return Promise.race([promise, timeout]);
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
@@ -50,6 +58,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isImpersonating, setIsImpersonating] = useState(false);
 
     const initializationDone = useRef(false);
+
+    // GUARANTEED timeout - loading MUST end after 8 seconds no matter what
+    useEffect(() => {
+        const maxTimeout = setTimeout(() => {
+            if (loading) {
+                console.warn('AuthProvider: Force ending loading state after timeout');
+                setLoading(false);
+            }
+        }, 8000);
+
+        return () => clearTimeout(maxTimeout);
+    }, [loading]);
 
     // Auto-logout timer (5 minutes inactivity)
     useEffect(() => {
@@ -86,12 +106,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const fetchUserProfile = useCallback(async (authUserId: string): Promise<boolean> => {
         try {
-            // Check consultor/superadmin
-            const { data: consultorData } = await supabase
+            // Check consultor/superadmin with 5s timeout
+            const consultorPromise = supabase
                 .from('usuarios')
                 .select('id, nome, email, role, role_plataforma, consultoria_id')
                 .eq('auth_user_id', authUserId)
                 .maybeSingle();
+
+            const { data: consultorData } = await withTimeout(consultorPromise, 5000, { data: null, error: null });
 
             if (consultorData) {
                 const role: UserRole = consultorData.role_plataforma === 'superadmin'
@@ -110,13 +132,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return true;
             }
 
-            // Check admin_empresa
-            const { data: empresaData } = await supabase
+            // Check admin_empresa with 5s timeout
+            const empresaPromise = supabase
                 .from('usuarios_empresa')
                 .select('id, nome, email, role_empresa, consultoria_id, empresa_cliente_id')
                 .eq('auth_user_id', authUserId)
                 .eq('ativo', true)
                 .maybeSingle();
+
+            const { data: empresaData } = await withTimeout(empresaPromise, 5000, { data: null, error: null });
 
             if (empresaData) {
                 setUserRole('admin_empresa');
@@ -168,7 +192,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const initAuth = async () => {
             try {
-                const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+                // Get session with 5s timeout
+                const sessionPromise = supabase.auth.getSession();
+                const { data, error } = await withTimeout(
+                    sessionPromise,
+                    5000,
+                    { data: { session: null }, error: new Error('Session timeout') }
+                );
 
                 if (error) {
                     console.error('Error getting session:', error);
@@ -176,6 +206,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     return;
                 }
 
+                const currentSession = data.session;
                 if (currentSession?.user) {
                     setSession(currentSession);
                     setUser(currentSession.user);
@@ -199,10 +230,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setUser(null);
                 setUserProfile(null);
                 setUserRole(null);
+                setLoading(false);
             } else if (event === 'SIGNED_IN' && newSession?.user) {
                 setSession(newSession);
                 setUser(newSession.user);
                 await fetchUserProfile(newSession.user.id);
+                setLoading(false);
             } else if (event === 'TOKEN_REFRESHED' && newSession) {
                 setSession(newSession);
             }

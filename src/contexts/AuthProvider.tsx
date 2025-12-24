@@ -62,29 +62,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [loading]);
 
     // Auto-logout timer (5 minutes inactivity)
+    // Only starts AFTER loading is complete to prevent logout during session recovery
     useEffect(() => {
-        if (!user) return;
+        // Don't start timer during loading or if no user
+        if (loading || !user) return;
 
         const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
         let timeoutId: ReturnType<typeof setTimeout>;
 
         const handleActivity = () => {
             clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => {
+            timeoutId = setTimeout(async () => {
                 console.log('User inactive for 5 minutes. Signing out...');
-                signOut();
+                sessionStorage.removeItem('admin_backup_session');
+                await supabase.auth.signOut();
             }, TIMEOUT_MS);
         };
 
         const events = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
         events.forEach(event => document.addEventListener(event, handleActivity));
+
+        // Start the timer initially
         handleActivity();
 
         return () => {
             events.forEach(event => document.removeEventListener(event, handleActivity));
             clearTimeout(timeoutId);
         };
-    }, [user]);
+    }, [user, loading]);
 
     // Check impersonation state
     useEffect(() => {

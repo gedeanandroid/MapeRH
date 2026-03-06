@@ -3,51 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthProvider';
+import { useConsultoria } from '../../hooks/useConsultoria';
 import WorkspaceLayout from '../../components/WorkspaceLayout';
 import {
     Users, Plus, Search, Loader2, Edit3, Eye, X,
     Building2, Briefcase, Network, Calendar, Phone, Mail, UserCheck, UserX
 } from 'lucide-react';
 import Button from '../../../components/ui/Button';
-
-interface Colaborador {
-    id: string;
-    nome_completo: string;
-    email: string | null;
-    telefone: string | null;
-    cpf: string | null;
-    data_nascimento: string | null;
-    unidade_id: string | null;
-    departamento_id: string;
-    cargo_id: string;
-    gestor_id: string | null;
-    local_trabalho: string | null;
-    data_admissao: string;
-    tipo_vinculo: string;
-    matricula: string | null;
-    jornada_padrao: string | null;
-    status: 'ativo' | 'desligado' | 'afastado';
-    data_desligamento: string | null;
-    unidade?: { nome: string };
-    departamento?: { nome: string };
-    cargo?: { nome: string };
-    gestor?: { nome_completo: string };
-}
-
-interface Unidade {
-    id: string;
-    nome: string;
-}
-
-interface Departamento {
-    id: string;
-    nome: string;
-}
-
-interface Cargo {
-    id: string;
-    nome: string;
-}
+import type { Colaborador, Unidade, Departamento, Cargo } from '../../types/workspace.types';
 
 const statusLabels: Record<string, { label: string; color: string }> = {
     ativo: { label: 'Ativo', color: 'bg-green-100 text-green-700' },
@@ -66,13 +29,13 @@ const vinculoLabels: Record<string, string> = {
 export default function Employees() {
     const { empresaId } = useParams<{ empresaId: string }>();
     const { user } = useAuth();
+    const { consultoriaId } = useConsultoria();
     const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
     const [unidades, setUnidades] = useState<Unidade[]>([]);
     const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
     const [cargos, setCargos] = useState<Cargo[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [consultoriaId, setConsultoriaId] = useState<string | null>(null);
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -119,14 +82,6 @@ export default function Employees() {
         if (!user || !empresaId) return;
 
         try {
-            const { data: userData } = await supabase
-                .from('usuarios')
-                .select('consultoria_id')
-                .eq('auth_user_id', user.id)
-                .single();
-
-            if (userData) setConsultoriaId(userData.consultoria_id);
-
             // Fetch unidades
             const { data: unidadesData } = await supabase
                 .from('unidades_organizacionais')
@@ -485,8 +440,8 @@ export default function Employees() {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3">{(colab.cargo as any)?.nome}</td>
-                                                <td className="px-4 py-3">{(colab.departamento as any)?.nome}</td>
+                                                <td className="px-4 py-3">{colab.cargo?.nome}</td>
+                                                <td className="px-4 py-3">{colab.departamento?.nome}</td>
                                                 <td className="px-4 py-3">
                                                     {new Date(colab.data_admissao).toLocaleDateString('pt-BR')}
                                                 </td>
@@ -770,7 +725,7 @@ export default function Employees() {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h2 className="text-xl font-bold">{viewingColaborador.nome_completo}</h2>
-                                        <p className="text-sm opacity-80">{(viewingColaborador.cargo as any)?.nome}</p>
+                                        <p className="text-sm opacity-80">{viewingColaborador.cargo?.nome}</p>
                                     </div>
                                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusLabels[viewingColaborador.status].color}`}>
                                         {statusLabels[viewingColaborador.status].label}
@@ -799,18 +754,18 @@ export default function Employees() {
                                     <div className="grid grid-cols-2 gap-4 text-sm">
                                         <div>
                                             <p className="text-neutral-gray500">Departamento</p>
-                                            <p className="font-medium">{(viewingColaborador.departamento as any)?.nome}</p>
+                                            <p className="font-medium">{viewingColaborador.departamento?.nome}</p>
                                         </div>
                                         {viewingColaborador.unidade && (
                                             <div>
                                                 <p className="text-neutral-gray500">Unidade</p>
-                                                <p className="font-medium">{(viewingColaborador.unidade as any)?.nome}</p>
+                                                <p className="font-medium">{viewingColaborador.unidade?.nome}</p>
                                             </div>
                                         )}
                                         {viewingColaborador.gestor && (
                                             <div>
                                                 <p className="text-neutral-gray500">Gestor</p>
-                                                <p className="font-medium">{(viewingColaborador.gestor as any)?.nome_completo}</p>
+                                                <p className="font-medium">{viewingColaborador.gestor?.nome_completo}</p>
                                             </div>
                                         )}
                                     </div>

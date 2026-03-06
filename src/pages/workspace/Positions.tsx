@@ -3,57 +3,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthProvider';
+import { useConsultoria } from '../../hooks/useConsultoria';
 import WorkspaceLayout from '../../components/WorkspaceLayout';
 import {
     Briefcase, Plus, Search, Filter, Loader2, Edit3, Eye,
     Building2, Network, ChevronUp, ChevronDown, X, Users, GraduationCap
 } from 'lucide-react';
 import Button from '../../../components/ui/Button';
-
-interface Cargo {
-    id: string;
-    nome: string;
-    codigo: string | null;
-    nivel_organizacional: string | null;
-    nivel_senioridade: string | null;
-    missao: string | null;
-    responsabilidades: string[];
-    atividades: string[];
-    escolaridade_minima: string | null;
-    experiencia_minima: string | null;
-    idiomas: string | null;
-    conhecimentos_tecnicos: string | null;
-    outros_requisitos: string | null;
-    departamento_id: string;
-    unidade_id: string | null;
-    cargo_superior_id: string | null;
-    status: string;
-    departamento?: { nome: string; unidade?: { nome: string } };
-    cargo_superior?: { nome: string };
-}
-
-interface Departamento {
-    id: string;
-    nome: string;
-    unidade_id: string;
-    unidade?: { nome: string };
-}
-
-interface Unidade {
-    id: string;
-    nome: string;
-}
+import type { Cargo, Departamento, Unidade } from '../../types/workspace.types';
 
 export default function Positions() {
     const { empresaId } = useParams<{ empresaId: string }>();
     const { user } = useAuth();
+    const { consultoriaId } = useConsultoria();
     const navigate = useNavigate();
     const [cargos, setCargos] = useState<Cargo[]>([]);
     const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
     const [unidades, setUnidades] = useState<Unidade[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [consultoriaId, setConsultoriaId] = useState<string | null>(null);
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -94,14 +62,6 @@ export default function Positions() {
         if (!user || !empresaId) return;
 
         try {
-            const { data: userData } = await supabase
-                .from('usuarios')
-                .select('consultoria_id')
-                .eq('auth_user_id', user.id)
-                .single();
-
-            if (userData) setConsultoriaId(userData.consultoria_id);
-
             // Fetch unidades
             const { data: unidadesData } = await supabase
                 .from('unidades_organizacionais')
@@ -437,7 +397,7 @@ export default function Positions() {
                                                     <div className="flex items-center gap-3 text-sm text-neutral-gray600">
                                                         <span className="flex items-center gap-1">
                                                             <Network className="w-3 h-3" />
-                                                            {(cargo.departamento as any)?.nome}
+                                                            {cargo.departamento?.nome}
                                                         </span>
                                                         {cargo.nivel_organizacional && (
                                                             <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
@@ -749,7 +709,7 @@ export default function Positions() {
                             <div className="sticky top-0 bg-primary-main text-white px-6 py-4 flex items-center justify-between">
                                 <div>
                                     <h2 className="text-xl font-bold">{viewingCargo.nome}</h2>
-                                    <p className="text-sm opacity-80">{(viewingCargo.departamento as any)?.nome}</p>
+                                    <p className="text-sm opacity-80">{viewingCargo.departamento?.nome}</p>
                                 </div>
                                 <button onClick={() => setShowView(false)} className="text-white/80 hover:text-white">
                                     <X className="w-6 h-6" />
@@ -771,7 +731,7 @@ export default function Positions() {
                                     )}
                                     {viewingCargo.cargo_superior && (
                                         <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                                            Reporta a: {(viewingCargo.cargo_superior as any)?.nome}
+                                            Reporta a: {viewingCargo.cargo_superior?.nome}
                                         </span>
                                     )}
                                 </div>

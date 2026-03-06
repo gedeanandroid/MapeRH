@@ -144,10 +144,10 @@ export default function AuditoriaSistema() {
                 ].map((tab) => (
                     <button
                         key={tab.key}
-                        onClick={() => setActiveTab(tab.key as any)}
+                        onClick={() => setActiveTab(tab.key as 'audit' | 'impersonation' | 'login')}
                         className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.key
-                                ? 'border-primary-main text-primary-main'
-                                : 'border-transparent text-gray-500 hover:text-gray-700'
+                            ? 'border-primary-main text-primary-main'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
                             }`}
                     >
                         {tab.label}

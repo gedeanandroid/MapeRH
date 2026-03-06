@@ -3,13 +3,6 @@ import { Database } from '../lib/database.types';
 
 type AuditLog = Database['public']['Tables']['audit_log']['Row'];
 
-interface AuditUser {
-    id: string;
-    type: string;
-    name: string;
-    email: string;
-}
-
 interface AuditContext {
     consultoriaId: string;
     empresaClienteId: string;
@@ -40,7 +33,6 @@ export const auditService = {
         action: 'INSERT' | 'UPDATE' | 'DELETE',
         tabela: string,
         registroId: string,
-        _user: AuditUser, // No longer used - fetched server-side
         context: AuditContext,
         dadosAnteriores?: any,
         dadosNovos?: any,
@@ -61,11 +53,11 @@ export const auditService = {
         return error;
     },
 
-    async logInsert(user: AuditUser, context: AuditContext, tabela: string, registroId: string, dadosNovos: any) {
-        return this.logAction('INSERT', tabela, registroId, user, context, null, dadosNovos);
+    async logInsert(context: AuditContext, tabela: string, registroId: string, dadosNovos: any) {
+        return this.logAction('INSERT', tabela, registroId, context, null, dadosNovos);
     },
 
-    async logUpdate(user: AuditUser, context: AuditContext, tabela: string, registroId: string, dadosAnteriores: any, dadosNovos: any) {
+    async logUpdate(context: AuditContext, tabela: string, registroId: string, dadosAnteriores: any, dadosNovos: any) {
         // Calculate changed fields
         const camposAlterados = Object.keys(dadosNovos).filter(key =>
             JSON.stringify(dadosAnteriores[key]) !== JSON.stringify(dadosNovos[key])
@@ -73,10 +65,10 @@ export const auditService = {
 
         if (camposAlterados.length === 0) return;
 
-        return this.logAction('UPDATE', tabela, registroId, user, context, dadosAnteriores, dadosNovos, camposAlterados);
+        return this.logAction('UPDATE', tabela, registroId, context, dadosAnteriores, dadosNovos, camposAlterados);
     },
 
-    async logDelete(user: AuditUser, context: AuditContext, tabela: string, registroId: string, dadosAnteriores: any) {
-        return this.logAction('DELETE', tabela, registroId, user, context, dadosAnteriores, null);
+    async logDelete(context: AuditContext, tabela: string, registroId: string, dadosAnteriores: any) {
+        return this.logAction('DELETE', tabela, registroId, context, dadosAnteriores, null);
     }
 };

@@ -3,42 +3,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthProvider';
+import { useConsultoria } from '../../hooks/useConsultoria';
 import WorkspaceLayout from '../../components/WorkspaceLayout';
 import {
     Building2, Network, GitBranch, Plus, Edit3, Loader2,
     MapPin, ChevronRight, X, Trash2
 } from 'lucide-react';
 import Button from '../../../components/ui/Button';
-
-interface Unidade {
-    id: string;
-    nome: string;
-    tipo: string | null;
-    cidade: string | null;
-    estado: string | null;
-    status: string;
-}
-
-interface Departamento {
-    id: string;
-    unidade_id: string;
-    nome: string;
-    departamento_pai_id: string | null;
-    status: string;
-    unidade?: Unidade;
-    subdepartamentos?: Departamento[];
-}
+import type { Unidade, Departamento } from '../../types/workspace.types';
 
 type Tab = 'unidades' | 'departamentos' | 'organograma';
 
 export default function OrganizationalStructure() {
     const { empresaId } = useParams<{ empresaId: string }>();
     const { user } = useAuth();
+    const { consultoriaId } = useConsultoria();
     const [activeTab, setActiveTab] = useState<Tab>('unidades');
     const [unidades, setUnidades] = useState<Unidade[]>([]);
     const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
     const [loading, setLoading] = useState(true);
-    const [consultoriaId, setConsultoriaId] = useState<string | null>(null);
 
     // Modals
     const [showUnidadeModal, setShowUnidadeModal] = useState(false);
@@ -59,16 +42,6 @@ export default function OrganizationalStructure() {
         if (!user || !empresaId) return;
 
         try {
-            const { data: userData } = await supabase
-                .from('usuarios')
-                .select('consultoria_id')
-                .eq('auth_user_id', user.id)
-                .single();
-
-            if (userData) {
-                setConsultoriaId(userData.consultoria_id);
-            }
-
             // Fetch unidades
             const { data: unidadesData } = await supabase
                 .from('unidades_organizacionais')
@@ -246,8 +219,8 @@ export default function OrganizationalStructure() {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 -mb-px ${activeTab === tab.id
-                                        ? 'border-primary-main text-primary-main'
-                                        : 'border-transparent text-neutral-gray600 hover:text-neutral-gray900'
+                                    ? 'border-primary-main text-primary-main'
+                                    : 'border-transparent text-neutral-gray600 hover:text-neutral-gray900'
                                     }`}
                             >
                                 <tab.icon className="w-4 h-4" />
@@ -367,7 +340,7 @@ export default function OrganizationalStructure() {
                                                     <div>
                                                         <h3 className="font-medium text-neutral-gray900">{dep.nome}</h3>
                                                         <p className="text-sm text-neutral-gray600">
-                                                            {(dep.unidade as any)?.nome || 'Sem unidade'}
+                                                            {dep.unidade?.nome || 'Sem unidade'}
                                                             {dep.departamento_pai_id && (
                                                                 <span className="ml-2">
                                                                     • Subordinado a: {departamentos.find(d => d.id === dep.departamento_pai_id)?.nome}

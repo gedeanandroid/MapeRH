@@ -3,44 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthProvider';
+import { useConsultoria } from '../../hooks/useConsultoria';
 import WorkspaceLayout from '../../components/WorkspaceLayout';
 import {
     BookOpen, Grid3X3, Plus, Search, Filter, Loader2, Edit3,
     Eye, X, Brain, Lightbulb, Heart, Check, Trash2, Target
 } from 'lucide-react';
 import Button from '../../../components/ui/Button';
-
-interface Competencia {
-    id: string;
-    nome: string;
-    tipo: 'tecnica' | 'comportamental' | 'organizacional';
-    eixo_cha: 'C' | 'H' | 'A';
-    descricao: string | null;
-    status: string;
-    niveis?: Nivel[];
-}
-
-interface Nivel {
-    id?: string;
-    nivel: number;
-    nome: string;
-    descricao: string;
-}
-
-interface Cargo {
-    id: string;
-    nome: string;
-    departamento?: { nome: string };
-}
-
-interface CargoCompetencia {
-    id: string;
-    cargo_id: string;
-    competencia_empresa_id: string;
-    nivel_desejado: number;
-    obrigatoria: boolean;
-    competencia?: Competencia;
-}
+import type { Competencia, Nivel, Cargo, CargoCompetencia } from '../../types/workspace.types';
 
 type Tab = 'biblioteca' | 'matriz';
 
@@ -67,12 +37,12 @@ const defaultNiveis: Nivel[] = [
 export default function Competencies() {
     const { empresaId } = useParams<{ empresaId: string }>();
     const { user } = useAuth();
+    const { consultoriaId } = useConsultoria();
     const [activeTab, setActiveTab] = useState<Tab>('biblioteca');
     const [competencias, setCompetencias] = useState<Competencia[]>([]);
     const [cargos, setCargos] = useState<Cargo[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [consultoriaId, setConsultoriaId] = useState<string | null>(null);
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -115,14 +85,6 @@ export default function Competencies() {
         if (!user || !empresaId) return;
 
         try {
-            const { data: userData } = await supabase
-                .from('usuarios')
-                .select('consultoria_id')
-                .eq('auth_user_id', user.id)
-                .single();
-
-            if (userData) setConsultoriaId(userData.consultoria_id);
-
             // Fetch competencias with niveis
             const { data: compData } = await supabase
                 .from('competencias_empresa')
@@ -392,8 +354,8 @@ export default function Competencies() {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 -mb-px ${activeTab === tab.id
-                                        ? 'border-primary-main text-primary-main'
-                                        : 'border-transparent text-neutral-gray600 hover:text-neutral-gray900'
+                                    ? 'border-primary-main text-primary-main'
+                                    : 'border-transparent text-neutral-gray600 hover:text-neutral-gray900'
                                     }`}
                             >
                                 <tab.icon className="w-4 h-4" />
@@ -543,7 +505,7 @@ export default function Competencies() {
                                                 <option value="">Selecione um cargo</option>
                                                 {cargos.map(c => (
                                                     <option key={c.id} value={c.id}>
-                                                        {c.nome} {(c.departamento as any)?.nome ? `(${(c.departamento as any).nome})` : ''}
+                                                        {c.nome} {c.departamento?.nome ? `(${c.departamento.nome})` : ''}
                                                     </option>
                                                 ))}
                                             </select>
@@ -592,7 +554,7 @@ export default function Competencies() {
                                                             </thead>
                                                             <tbody className="divide-y">
                                                                 {cargoCompetencias.map(cc => {
-                                                                    const comp = cc.competencia as any;
+                                                                    const comp = cc.competencia;
                                                                     if (!comp) return null;
                                                                     return (
                                                                         <tr key={cc.id} className="hover:bg-gray-50">
@@ -679,7 +641,7 @@ export default function Competencies() {
                                         <label className="block text-sm font-medium text-neutral-gray700 mb-1">Tipo *</label>
                                         <select
                                             value={formData.tipo}
-                                            onChange={e => setFormData(prev => ({ ...prev, tipo: e.target.value as any }))}
+                                            onChange={e => setFormData(prev => ({ ...prev, tipo: e.target.value as Competencia['tipo'] }))}
                                             className="w-full px-4 py-2 border border-gray-200 rounded-lg"
                                         >
                                             <option value="tecnica">Técnica</option>
@@ -691,7 +653,7 @@ export default function Competencies() {
                                         <label className="block text-sm font-medium text-neutral-gray700 mb-1">Eixo CHA *</label>
                                         <select
                                             value={formData.eixo_cha}
-                                            onChange={e => setFormData(prev => ({ ...prev, eixo_cha: e.target.value as any }))}
+                                            onChange={e => setFormData(prev => ({ ...prev, eixo_cha: e.target.value as Competencia['eixo_cha'] }))}
                                             className="w-full px-4 py-2 border border-gray-200 rounded-lg"
                                         >
                                             <option value="C">C - Conhecimento</option>

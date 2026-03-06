@@ -200,7 +200,7 @@ export default function UserManagement() {
                 initialData={selectedUser ? {
                     nome: selectedUser.nome,
                     email: selectedUser.email,
-                    role_empresa: selectedUser.role_empresa as any,
+                    role_empresa: selectedUser.role_empresa as 'admin_empresa' | 'gestor' | 'visualizador',
                     ativo: selectedUser.ativo || false
                 } : undefined}
             />

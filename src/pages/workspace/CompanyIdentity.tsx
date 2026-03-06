@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../contexts/AuthProvider';
+import { useConsultoria } from '../../hooks/useConsultoria';
 import WorkspaceLayout from '../../components/WorkspaceLayout';
 import {
     Target, Eye, Heart, Sparkles, Star, Clock, Edit3, Plus,
@@ -37,14 +38,13 @@ interface FormData {
 export default function CompanyIdentity() {
     const { empresaId } = useParams<{ empresaId: string }>();
     const { user } = useAuth();
+    const { consultoriaId, usuarioId } = useConsultoria();
     const [identidade, setIdentidade] = useState<Identidade | null>(null);
     const [historico, setHistorico] = useState<Identidade[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [showHistorico, setShowHistorico] = useState(false);
-    const [consultoriaId, setConsultoriaId] = useState<string | null>(null);
-    const [usuarioId, setUsuarioId] = useState<string | null>(null);
 
     const [formData, setFormData] = useState<FormData>({
         missao: '',
@@ -64,18 +64,6 @@ export default function CompanyIdentity() {
         if (!user || !empresaId) return;
 
         try {
-            // Get user's consultoria_id and usuario_id
-            const { data: userData } = await supabase
-                .from('usuarios')
-                .select('id, consultoria_id')
-                .eq('auth_user_id', user.id)
-                .single();
-
-            if (userData) {
-                setConsultoriaId(userData.consultoria_id);
-                setUsuarioId(userData.id);
-            }
-
             // Fetch latest identity version
             const { data: identidadeData, error } = await supabase
                 .from('identidades_empresariais')
@@ -88,7 +76,6 @@ export default function CompanyIdentity() {
             if (!error && identidadeData) {
                 setIdentidade(identidadeData);
             }
-
         } catch (error) {
             console.error('Error fetching identity:', error);
         } finally {
@@ -595,8 +582,8 @@ export default function CompanyIdentity() {
                                             <div
                                                 key={versao.id}
                                                 className={`p-4 rounded-xl border ${versao.id === identidade?.id
-                                                        ? 'border-primary-main bg-primary-main/5'
-                                                        : 'border-gray-200'
+                                                    ? 'border-primary-main bg-primary-main/5'
+                                                    : 'border-gray-200'
                                                     }`}
                                             >
                                                 <div className="flex items-center justify-between mb-2">

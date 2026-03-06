@@ -73,7 +73,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const handleActivity = () => {
             clearTimeout(timeoutId);
             timeoutId = setTimeout(async () => {
-                console.log('User inactive for 5 minutes. Signing out...');
                 sessionStorage.removeItem('admin_backup_session');
                 await supabase.auth.signOut();
             }, TIMEOUT_MS);
@@ -195,14 +194,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const initAuth = async () => {
             try {
-                console.log('AuthProvider: Starting session initialization...');
-
                 // Get session with 5s timeout
                 const sessionResult = await Promise.race([
                     supabase.auth.getSession(),
                     new Promise<{ data: { session: null }; error: null }>((resolve) =>
                         setTimeout(() => {
-                            console.log('AuthProvider: Session timeout, returning null');
                             resolve({ data: { session: null }, error: null });
                         }, 5000)
                     )
@@ -219,7 +215,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
 
                 const currentSession = data.session;
-                console.log('AuthProvider: Session result:', currentSession ? 'Found session' : 'No session');
 
                 if (currentSession?.user) {
                     setSession(currentSession);
@@ -239,8 +234,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-            console.log('Auth event:', event, 'Session:', newSession ? 'exists' : 'null');
-
             if (!isMounted) return;
 
             if (event === 'SIGNED_OUT') {
@@ -256,7 +249,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setLoading(false);
             } else if (event === 'INITIAL_SESSION' && newSession?.user) {
                 // Handle session recovery on page refresh
-                console.log('AuthProvider: INITIAL_SESSION - recovering session');
                 setSession(newSession);
                 setUser(newSession.user);
                 await fetchUserProfile(newSession.user.id);
